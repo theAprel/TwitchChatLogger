@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
+import java.time.Instant;
 import org.jibble.pircbot.IrcException;
 import org.jibble.pircbot.PircBot;
 
@@ -54,7 +55,18 @@ public class TwitchChatLogger extends PircBot {
     @Override
     protected void onMessage(String channel, String sender, String login, 
             String hostname, String message) {
-        
+        Instant now = Instant.now();
+        StringBuilder logline = new StringBuilder();
+        logline.append(now).append(" ").append(sender).append(": ").append(message)
+                .append(System.lineSeparator());
+        try {
+            writer.write(logline.toString());
+            writer.flush();
+        }
+        catch(IOException ex) {
+            System.err.println("Error writing to file. Program will terminate.");
+            ex.printStackTrace();
+        }
     }
     
     public static void main(String args[]) throws Exception {
