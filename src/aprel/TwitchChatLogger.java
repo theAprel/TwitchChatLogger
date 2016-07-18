@@ -17,9 +17,11 @@
 package aprel;
 
 import java.io.File;
-import java.io.FileWriter;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.nio.charset.Charset;
 import java.time.Instant;
 import org.jibble.pircbot.IrcException;
 import org.jibble.pircbot.PircBot;
@@ -43,7 +45,8 @@ public class TwitchChatLogger extends PircBot {
         this.nick = nick;
         this.oauth = oauth;
         this.channel = channel;
-        writer = new FileWriter(new File(channel + ".txt"), true);
+        writer = new OutputStreamWriter(new FileOutputStream(
+                new File(channel + ".txt"), true), Charset.forName("UTF-8"));
     }
     
     public void connect() throws IOException, IrcException {
