@@ -48,6 +48,7 @@ public class TwitchChatLogger extends PircBot {
     public void connect() throws IOException, IrcException {
         setName(nick);
         connect(IRC_SERVER, IRC_PORT, oauth);
+        joinChannel(channel);
     }
 
     @Override
@@ -60,6 +61,7 @@ public class TwitchChatLogger extends PircBot {
         if(args == null || args.length != 3) {
             System.out.println("java -jar TwitchChatLogger.jar <Twitch username>"
                     + " <Twitch OAuth> <channel>");
+            System.out.println("Don't forget the \"#\" symbol before the channel.");
             System.exit(0);
         }
         
