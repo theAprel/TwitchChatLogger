@@ -23,14 +23,19 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.charset.Charset;
 import java.time.Instant;
-import org.jibble.pircbot.IrcException;
-import org.jibble.pircbot.PircBot;
+import org.pircbotx.Configuration;
+import org.pircbotx.PircBotX;
+import org.pircbotx.cap.EnableCapHandler;
+import org.pircbotx.exception.IrcException;
+import org.pircbotx.hooks.ListenerAdapter;
+import org.pircbotx.hooks.types.GenericMessageEvent;
+
 
 /**
  *
  * @author Aprel
  */
-public class TwitchChatLogger extends PircBot {
+public class TwitchChatLogger extends ListenerAdapter {
     
     private static final String IRC_SERVER = "irc.chat.twitch.tv";
     private static final int IRC_PORT = 6667;
@@ -43,23 +48,35 @@ public class TwitchChatLogger extends PircBot {
     public TwitchChatLogger(String nick, String oauth, String channel) 
             throws IOException {
         this.nick = nick;
-        this.oauth = oauth;
+        this.oauth = oauth.startsWith("oauth:") ? oauth : "oauth:" + oauth;
         this.channel = channel;
         writer = new OutputStreamWriter(new FileOutputStream(
                 new File(channel + ".txt"), true), Charset.forName("UTF-8"));
     }
     
     public void connect() throws IOException, IrcException {
-        setName(nick);
-        connect(IRC_SERVER, IRC_PORT, oauth);
-        joinChannel(channel);
+        Configuration config = new Configuration.Builder()
+                .setAutoNickChange(false) //Twitch doesn't support multiple users
+                .setOnJoinWhoEnabled(false) //Twitch doesn't support WHO command
+                .setCapEnabled(true)
+                .addCapHandler(new EnableCapHandler("twitch.tv/membership")) //Twitch by default doesn't send JOIN, PART, and NAMES unless you request it, see https://github.com/justintv/Twitch-API/blob/master/IRC.md#membership
+
+                .addServer("irc.twitch.tv")
+                .setName(this.nick) //Your twitch.tv username
+                .setServerPassword(this.oauth) //Your oauth password from http://twitchapps.com/tmi
+                .addAutoJoinChannel(this.channel) //Some twitch channel
+                .addListener(this)
+                .buildConfiguration();
+        PircBotX bot = new PircBotX(config);
+        bot.startBot();
     }
 
     @Override
-    protected void onMessage(String channel, String sender, String login, 
-            String hostname, String message) {
+    public void onGenericMessage(final GenericMessageEvent event) throws Exception {
         Instant now = Instant.now();
         StringBuilder logline = new StringBuilder();
+        String sender = event.getUser().getNick();
+        String message = event.getMessage();
         logline.append(now).append(" ").append(sender).append(": ").append(message)
                 .append(System.lineSeparator());
         try {
